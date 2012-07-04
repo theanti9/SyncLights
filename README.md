@@ -74,6 +74,81 @@ Hopefully at this point, it should be setup and working! Feel free to send me a 
 
 If you're looking for the syncing server, you can find it on my profile [here](https://github.com/theanti9/SyncLightsServer). More documentation on the sync server to come..
 
+## Protocol Spec
+
+Currently the protocol for the SyncLights arduino server is very simple and really only does one thing: Accept pattern definitions. It is a standard TCP server.
+
+> NOTE: Make sure all multi-byte integer values are Network Byte Order!
+
+Here's the order of things that should be sent:
+
+1. Initialization byte
+2. Pattern Length - 32-bit integer
+3. Pattern Time - 8-bit integer
+4. *Pattern Length* Instructions (8 bytes each)
+
+Each instruction goes as follows:
+
+1. Blank byte (0x00)
+2. Pixel Red Value - byte (0x00 - 0xFF)
+3. Pixel Green Value - byte (0x00 - 0xFF)
+4. Pixel Blue Value - byte (0x00 - 0xFF)
+5. Pixel X Coordinate - 8-bit integer
+6. Pixel Y Coordinate - 8-bit integer
+7. Time Delay - 16-bit integer
+
+### Initialization byte
+
+The very first byte that should be sent is called the Initialization byte and is equal to 1 (0x01).
+
+### Pattern Length
+
+The pattern length is a 32-bit integer that represents how many "Instructions" or "Steps" there will be.
+
+### Pattern Time
+
+The pattern time designates how long to play the submitted pattern for in seconds (0-255)
+
+### Instructions
+
+This is where you start reapeating the 8-byte instructions. The number of bytes following the Pattern Time should be equal to (8 * Pattern Length)
+
+* * *
+
+### Blank Byte
+
+This should always be 0x00, although it really doesn't matter, it's just the extra byte from storing the 24-bit color value in a 32-bit integer
+
+### Pixel Red Value
+
+This byte should be the Red "RGB" value and should be between 0 and 255 (0x00 - 0xFF)
+
+### Pixel Green Value
+
+This byte should be the Green "RGB" value and should be between 0 and 255 (0x00 - 0xFF)
+
+### Pixel Blue Value
+
+This byte should be the Blue "RGB" value and should be between 0 and 255 (0x00 - 0xFF)
+
+### Pixel X Coordinate
+
+This is an 8-bit integer that represents x coordinate on the grid of lights for which light the color should be applied to.
+
+### Pixel Y Coordinate
+
+This is an 8-bit integer that represents y coordinate on the grid of lights for which light the color should be applied to.
+
+### Time Delay
+
+This is a 16-bit integer that represents the number of *miliseconds* to wait after applying this instruction before moving on to the next one.
+
+
+
+### SyncLights Arduino Server Response
+
+After a pattern is sent and the arduino parses it, it will reply with the ASCII string "load complete" and close the connection.
+
 
 
 ## Dependencies:
