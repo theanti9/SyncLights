@@ -143,7 +143,7 @@ This is an 8-bit integer that represents y coordinate on the grid of lights for 
 
 This is a 16-bit integer that represents the number of *miliseconds* to wait after applying this instruction before moving on to the next one.
 
-
+* * *
 
 ### SyncLights Arduino Server Response
 
