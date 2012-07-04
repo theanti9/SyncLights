@@ -35,9 +35,12 @@ PatternList *cur_list = new PatternList();
 unsigned long pattern_start;
 unsigned long pattern_stop;
 
+boolean need_set_ready = true;
+
 /* ********* Setup *********/
 void setup() {
   Ethernet.begin(mac);
+  delay(1000);  // Just make sure we have time to get an address via DHCP
   server.begin();
   strip.begin();
   strip.show();
@@ -49,7 +52,10 @@ void setup() {
 
 /* ********* Main *********/
 void loop() {
-  clientSetReady();
+  if (need_set_ready) {
+    clientSetReady();
+    need_set_ready = false;
+  }
   wait_for_client();
 }
 
@@ -57,6 +63,7 @@ void wait_for_client() {
   colorAll(0);
   EthernetClient client = server.available();
   if (client == true) {
+    need_set_ready = true;
     Serial.println("Connected");
     // Reset the list
     cur_list = new PatternList();
@@ -123,6 +130,7 @@ void wait_for_client() {
 }
 
 void clientSetReady() {
+  Serial.println("Setting ready...");
   if(syncClient.connect(centralServer, centralServerPort)) {
     syncClient.print("GET /?action=ready&ip=");
     syncClient.print(Ethernet.localIP());
@@ -138,6 +146,7 @@ void clientSetReady() {
 }
 
 void clientRegister() {
+  Serial.println("Registering...");
   if (syncClient.connect(centralServer, centralServerPort)) {
     syncClient.print("GET /?action=register&ip=");
     syncClient.print(Ethernet.localIP());
