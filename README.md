@@ -54,13 +54,13 @@ IPAddress centralServer(192,168,1,122);
 int centralServerPort = 80;
 ```
 
-##### Server stuff
+### Server stuff
 
 - int *serverPort*: This is the port that you want the arduino server to listen on for incoming connections; pretty self-explanatory. (Default is 1190)
 - boolean *useDHCP*: Whether the arduino should try and acquire it's IP address from a DHCP server or not. If this is true, the next setting can be disregarded.
 - IPAddress *arduinoServerIP*: This obviously depends on your network setup and also doesn't matter if *useDHCP* is *true*.
 
-##### Syncing stuff
+### Syncing stuff
 
 If you want to connect to a central server and have the arduino receive it's patterns from there, set *doSync* to true and fill these in. Otherwise, set *doSync* to false, and ignore them.
 
@@ -68,7 +68,7 @@ If you want to connect to a central server and have the arduino receive it's pat
 - IPAddress *centralServer*: the IP Address of the central server to connect to and register with.
 - int *centralServerPort*: The port the central server is listening on. (Default is 80 since it takes HTTP requests)
 
-#### You're done!
+### You're done!
 
 Hopefully at this point, it should be setup and working! Feel free to send me a message on GitHub if you're having trouble. Also, please submit any bugs you come across on the issues page!
 
