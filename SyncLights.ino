@@ -11,7 +11,7 @@
 // pin settings
 int dataPin = 2;  // Yellow wire
 int clockPin = 3;  // Green wire
-
+int stripLength = 25;  // How many lights
 // Server settings
 int serverPort = 1190;
 IPAddress centralServer(192,168,1,122);
@@ -19,7 +19,7 @@ int centralServerPort = 80;
 EthernetClient syncClient;
 
 // Object setup
-Adafruit_WS2801 strip = Adafruit_WS2801(25, dataPin, clockPin);
+Adafruit_WS2801 strip = Adafruit_WS2801(stripLength, dataPin, clockPin);
 byte mac[] = { 0xEA, 0xF3, 0xD1, 0xAD, 0x11, 0x3F };
 // Shield should grab a DHCP address
 EthernetServer server(serverPort);
