@@ -12,10 +12,17 @@
 int dataPin = 2;  // Yellow wire
 int clockPin = 3;  // Green wire
 int stripLength = 25;  // How many lights
+
 // Server settings
 int serverPort = 1190;
+boolean useDHCP = true;
+IPAddress arduinoServerIP(192,168,1,125);  // Only used if DHCP is off. This will depend on your network setup.
+// Syncing stuff
+boolean doSync = true;
 IPAddress centralServer(192,168,1,122);
 int centralServerPort = 80;
+
+
 EthernetClient syncClient;
 
 // Object setup
@@ -25,9 +32,9 @@ byte mac[] = { 0xEA, 0xF3, 0xD1, 0xAD, 0x11, 0x3F };
 EthernetServer server(serverPort);
 int grid[5][5] = {
   { 0, 1, 2, 3, 4 },
-  { 5, 6, 7, 8, 9 },
+  { 9, 8, 7, 6, 5 },
   { 10, 11, 12, 13, 14 },
-  { 14, 16, 17, 18, 19 },
+  { 19, 18, 17, 16, 15 },
   { 20, 21, 22, 23, 24 }
 };
 PatternList *cur_list = new PatternList();
@@ -39,22 +46,38 @@ boolean need_set_ready = true;
 
 /* ********* Setup *********/
 void setup() {
-  Ethernet.begin(mac);
+  Serial.begin(9600);
+  if (useDHCP) {
+    Serial.println("Acquiring IP Address from DHCP Server...");
+    if (!Ethernet.begin(mac)) {
+      Serial.println("DCHP Request failed!");
+      for(;;) ; // Do nothing forever because we can't do anything
+    } else {
+      Serial.println("Address acquired");
+      Serial.print("Arduino's IP: ");
+      Serial.println(Ethernet.localIP());
+    }
+  } else {
+    Ethernet.begin(mac, arduinoServerIP);
+  }
   delay(1000);  // Just make sure we have time to get an address via DHCP
   server.begin();
   strip.begin();
   strip.show();
   randomSeed(analogRead(0));
-  Serial.begin(9600);
   setTime(0,0,0,0,0,0);
-  clientRegister();
+  if (doSync) {
+    clientRegister();
+  }
 }
 
 /* ********* Main *********/
 void loop() {
-  if (need_set_ready) {
-    clientSetReady();
-    need_set_ready = false;
+  if (doSync) {
+    if (need_set_ready) {
+      clientSetReady();
+      need_set_ready = false;
+    }
   }
   wait_for_client();
 }
