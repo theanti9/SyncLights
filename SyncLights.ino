@@ -14,7 +14,9 @@ int clockPin = 3;  // Green wire
 
 // Server settings
 int serverPort = 1190;
-
+IPAddress centralServer(192,168,1,122);
+int centralServerPort = 80;
+EthernetClient syncClient;
 
 // Object setup
 Adafruit_WS2801 strip = Adafruit_WS2801(25, dataPin, clockPin);
@@ -42,10 +44,12 @@ void setup() {
   randomSeed(analogRead(0));
   Serial.begin(9600);
   setTime(0,0,0,0,0,0);
+  clientRegister();
 }
 
 /* ********* Main *********/
 void loop() {
+  clientSetReady();
   wait_for_client();
 }
 
@@ -65,13 +69,18 @@ void wait_for_client() {
       int pattern_len = client.read();
       pattern_len <<= 8;
       pattern_len |= client.read();
+      
       pattern_len <<= 8;
       pattern_len |= client.read();
-    
+      
+      pattern_len <<= 8;
+      pattern_len |= client.read();
+
       // how many seconds to loop the pattern
       uint8_t pattern_time = client.read();
       for (int i = 0; i < pattern_len; i++) {
         // read the color
+        client.read(); // Blank byte
         Color c;
         c.r = client.read();
         c.g = client.read();
@@ -80,6 +89,7 @@ void wait_for_client() {
         uint8_t x = client.read();
         uint8_t y = client.read();
         uint16_t t = client.read();
+
         // read the delay
         t <<= 8;
         t |= client.read();
@@ -112,6 +122,35 @@ void wait_for_client() {
   }
 }
 
+void clientSetReady() {
+  if(syncClient.connect(centralServer, centralServerPort)) {
+    syncClient.print("GET /?action=ready&ip=");
+    syncClient.print(Ethernet.localIP());
+    syncClient.print("&port=");
+    syncClient.print(serverPort);
+    syncClient.print(" HTTP/1.1");
+    syncClient.println();
+    syncClient.println();
+    syncClient.stop();
+  } else {
+    Serial.println("Client connection failed!");
+  }
+}
+
+void clientRegister() {
+  if (syncClient.connect(centralServer, centralServerPort)) {
+    syncClient.print("GET /?action=register&ip=");
+    syncClient.print(Ethernet.localIP());
+    syncClient.print("&port=");
+    syncClient.print(serverPort);
+    syncClient.print(" HTTP/1.1");
+    syncClient.println();
+    syncClient.println();
+    syncClient.stop();
+  } else {
+    Serial.println("Client connection failed!");
+  }
+}
 // set all pixels to a "Color" value
 void colorAll(uint32_t c) {
  int i;
