@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="SyncLights : Arduino project that will play patterns on Adafruit WS2801 LED strips submitted to it over the internet." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>SyncLights</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/theanti9/SyncLights">View on GitHub</a>
+
+          <h1 id="project_title">SyncLights</h1>
+          <h2 id="project_tagline">Arduino project that will play patterns on Adafruit WS2801 LED strips submitted to it over the internet.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/theanti9/SyncLights/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/theanti9/SyncLights/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>SyncLights</h1>
+
+<p>SyncLights is an Arduino Application that allows your arduino board to receive patterns to play on the attached Adafruit WS2801 LED string over the internet.</p>
+
+<h2>Future</h2>
+
+<p>I'm currently working on a way to have a central server queue up patterns (possibly submitted via a public website) to play across any Arduinos that decide to connect to it. People will be able to set up their arduino with this and point it at a server which people can submit patterns to. They will enter a queue and when that pattner comes up in the queue the server will send it to all of the arduinos registered with the server so they will all play the same pattern simultaneously. All of the related code will also be release here on my <a href="http://github.com/theanti9">GitHub profile</a>.</p>
+
+<h2>Arduino Setup</h2>
+
+<p>From a hardware perspective there are a few things you need for the Arduino:</p>
+
+<ul>
+<li>
+<a href="http://arduino.cc/en/Main/ArduinoEthernetShield">Ethernet Shield</a> or some variant of arduino with Ethernet capability.</li>
+<li>
+<a href="http://www.adafruit.com/products/738">Adafruit WS2801 LED Pixels</a>. Note that you can string multiples of these together easily but more than one will probably require a power source more powerful than just the arduinos +5v pin.</li>
+<li>
+<a href="http://www.adafruit.com/products/276">5V 2A Power Supply</a>. If you read the documentation on the pixels, unless you're only going to be powering a few at a time, it suggests using an external power supply in order to handle the amperage.</li>
+<li>(tehcnically optional. Good if you don't already have a way to connect the external power supply) <a href="http://www.adafruit.com/products/368">Female DC Power adapter</a>. </li>
+<li>(optional if you don't want to have to cut the end of the cable) <a href="http://www.adafruit.com/products/578">4-pin JST SM Plug Cable</a> Pop this onto the end of the WS2801 string and then put the appropriate wires into their slots on the arduino.</li>
+</ul><h3>Wiring</h3>
+
+<p>The wiring for this project is extremely simple. You can find the documentation for the WS2801's <a href="http://www.ladyada.net/products/pixel12mm/#wiring">here</a>. As I stated in the setup list, you should have an external power supply for the LED Pixels, though I noticed that plugging them into the arduino directly at least for testing worked ok (DISCLAIMER: It's not my fault if you do this and something bad happens to your arduino board!).</p>
+
+<p>Assuming you did get the external power supply, this leaves two wires to go into the arduino board. The "Data" (yellow) and the "Clock" (green). If you look at the arduino code you'll see at the top the following:</p>
+
+<div class="highlight">
+<pre><span class="kt">int</span> <span class="n">dataPin</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>  <span class="c1">// Yellow wire</span>
+<span class="kt">int</span> <span class="n">clockPin</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>  <span class="c1">// Green wire</span>
+</pre>
+</div>
+
+
+<p>So if you don't want to bother with changing these numbers, just put the data in digital pin 2, and the clock in digital pin 3. There is also another important setting, the number of pixels you have!</p>
+
+<div class="highlight">
+<pre><span class="kt">int</span> <span class="n">stripLength</span> <span class="o">=</span> <span class="mi">25</span><span class="p">;</span>  <span class="c1">// How many lights</span>
+</pre>
+</div>
+
+
+<p>The WS2801's have 25 pixels each. If you use one strand you have 25, if you hook up a second you have 50 and so on. Set this to that number.</p>
+
+<blockquote>
+<p>NOTE: These are meant to be arranged in a grid. You'll see a multi-dimensional array aptly named <em>grid</em> not too far below the previously mentioned settings. This grid allows the code to use an (x,y) coordinate system to access the pixels.
+By default, the grid is set for a 5 x 5 grid (which is just one strand of Pixels). If you want something different which <strong>includes MORE than one strand</strong> you need to adjust <em>grid</em> accordingly.</p>
+</blockquote>
+
+<hr><p>Alright! From an electronics perspective, you're done! Now for some network settings. Here's the network settings block:</p>
+
+<div class="highlight">
+<pre><span class="c1">// Server settings</span>
+<span class="kt">int</span> <span class="n">serverPort</span> <span class="o">=</span> <span class="mi">1190</span><span class="p">;</span>
+<span class="n">boolean</span> <span class="n">useDHCP</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="n">IPAddress</span> <span class="n">arduinoServerIP</span><span class="p">(</span><span class="mi">192</span><span class="p">,</span><span class="mi">168</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">125</span><span class="p">);</span>  <span class="c1">// Only used if DHCP is off. This will depend on your network setup.</span>
+<span class="c1">// Syncing stuff</span>
+<span class="n">boolean</span> <span class="n">doSync</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+<span class="n">IPAddress</span> <span class="n">centralServer</span><span class="p">(</span><span class="mi">192</span><span class="p">,</span><span class="mi">168</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">122</span><span class="p">);</span>
+<span class="kt">int</span> <span class="n">centralServerPort</span> <span class="o">=</span> <span class="mi">80</span><span class="p">;</span>
+</pre>
+</div>
+
+
+<h3>Server stuff</h3>
+
+<ul>
+<li>int <em>serverPort</em>: This is the port that you want the arduino server to listen on for incoming connections; pretty self-explanatory. (Default is 1190)</li>
+<li>boolean <em>useDHCP</em>: Whether the arduino should try and acquire it's IP address from a DHCP server or not. If this is true, the next setting can be disregarded.</li>
+<li>IPAddress <em>arduinoServerIP</em>: This obviously depends on your network setup and also doesn't matter if <em>useDHCP</em> is <em>true</em>.</li>
+</ul><h3>Syncing stuff</h3>
+
+<p>If you want to connect to a central server and have the arduino receive it's patterns from there, set <em>doSync</em> to true and fill these in. Otherwise, set <em>doSync</em> to false, and ignore them.</p>
+
+<ul>
+<li>boolean <em>doSync</em>: Whether or not to sync the patterns with a central server.</li>
+<li>IPAddress <em>centralServer</em>: the IP Address of the central server to connect to and register with.</li>
+<li>int <em>centralServerPort</em>: The port the central server is listening on. (Default is 80 since it takes HTTP requests)</li>
+</ul><h3>You're done!</h3>
+
+<p>Hopefully at this point, it should be setup and working! Feel free to send me a message on GitHub if you're having trouble. Also, please submit any bugs you come across on the issues page!</p>
+
+<p>If you're looking for the syncing server, you can find it on my profile <a href="https://github.com/theanti9/SyncLightsServer">here</a>. More documentation on the sync server to come..</p>
+
+<h2>Protocol Spec</h2>
+
+<p>Currently the protocol for the SyncLights arduino server is very simple and really only does one thing: Accept pattern definitions. It is a standard TCP server.</p>
+
+<blockquote>
+<p>NOTE: Make sure all multi-byte integer values are Network Byte Order!</p>
+</blockquote>
+
+<p>Here's the order of things that should be sent:</p>
+
+<ol>
+<li>Initialization byte</li>
+<li>Pattern Length - 32-bit integer</li>
+<li>Pattern Time - 8-bit integer</li>
+<li>
+<em>Pattern Length</em> Instructions (8 bytes each)</li>
+</ol><p>Each instruction goes as follows:</p>
+
+<ol>
+<li>Blank byte (0x00)</li>
+<li>Pixel Red Value - byte (0x00 - 0xFF)</li>
+<li>Pixel Green Value - byte (0x00 - 0xFF)</li>
+<li>Pixel Blue Value - byte (0x00 - 0xFF)</li>
+<li>Pixel X Coordinate - 8-bit integer</li>
+<li>Pixel Y Coordinate - 8-bit integer</li>
+<li>Time Delay - 16-bit integer</li>
+</ol><h3>Initialization byte</h3>
+
+<p>The very first byte that should be sent is called the Initialization byte and is equal to 1 (0x01).</p>
+
+<h3>Pattern Length</h3>
+
+<p>The pattern length is a 32-bit integer that represents how many "Instructions" or "Steps" there will be.</p>
+
+<h3>Pattern Time</h3>
+
+<p>The pattern time designates how long to play the submitted pattern for in seconds (0-255)</p>
+
+<h3>Instructions</h3>
+
+<p>This is where you start reapeating the 8-byte instructions. The number of bytes following the Pattern Time should be equal to (8 * Pattern Length)</p>
+
+<hr><h3>Blank Byte</h3>
+
+<p>This should always be 0x00, although it really doesn't matter, it's just the extra byte from storing the 24-bit color value in a 32-bit integer</p>
+
+<h3>Pixel Red Value</h3>
+
+<p>This byte should be the Red "RGB" value and should be between 0 and 255 (0x00 - 0xFF)</p>
+
+<h3>Pixel Green Value</h3>
+
+<p>This byte should be the Green "RGB" value and should be between 0 and 255 (0x00 - 0xFF)</p>
+
+<h3>Pixel Blue Value</h3>
+
+<p>This byte should be the Blue "RGB" value and should be between 0 and 255 (0x00 - 0xFF)</p>
+
+<h3>Pixel X Coordinate</h3>
+
+<p>This is an 8-bit integer that represents x coordinate on the grid of lights for which light the color should be applied to.</p>
+
+<h3>Pixel Y Coordinate</h3>
+
+<p>This is an 8-bit integer that represents y coordinate on the grid of lights for which light the color should be applied to.</p>
+
+<h3>Time Delay</h3>
+
+<p>This is a 16-bit integer that represents the number of <em>miliseconds</em> to wait after applying this instruction before moving on to the next one.</p>
+
+<hr><h3>SyncLights Arduino Server Response</h3>
+
+<p>After a pattern is sent and the arduino parses it, it will reply with the ASCII string "load complete" and close the connection.</p>
+
+<h2>Dependencies:</h2>
+
+<ul>
+<li><a href="https://github.com/adafruit/Adafruit-WS2801-Library">Adafruit WS2801 Library</a></li>
+<li><a href="http://www.arduino.cc/playground/uploads/Code/Time.zip">Arduino Time</a></li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">SyncLights maintained by <a href="https://github.com/theanti9">theanti9</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-33160652-1");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+
+  </body>
+</html>
